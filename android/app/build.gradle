@@ -43,7 +43,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.fall_heart"
+        applicationId "com.example.fall_heart"
         minSdkVersion 21
         targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
