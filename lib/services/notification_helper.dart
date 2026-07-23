@@ -13,14 +13,27 @@ class NotificationHelper {
     await _plugin.initialize(initSettings);
   }
 
-  static Future<NotificationPermission> checkPermission() =>
-      FlutterForegroundTask.checkNotificationPermission();
+  // 返回 bool：true 表示已授权，false 表示未授权
+  static Future<bool> checkPermission() async {
+    // 这里简化处理，你也可以调用 FlutterForegroundTask.checkNotificationPermission()
+    // 但为了统一，我们用 plugin 的平台实现来判断
+    final bool? enabled = await _plugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>()?.areNotificationsEnabled();
+    return enabled ?? false;
+  }
 
-  static Future<NotificationPermission> requestPermission() =>
-      FlutterForegroundTask.requestNotificationPermission();
+  // 请求权限，返回 bool：true 表示授权成功
+  static Future<bool> requestPermission() async {
+    // Android 13+ 需要动态请求，这里我们用 FlutterForegroundTask 的接口
+    final result = await FlutterForegroundTask.requestNotificationPermission();
+    // result 可能是枚举，我们转换为 bool
+    // 假设 result 是 NotificationPermission 类型，我们检查是否为 granted
+    // 但为了简化，我们调用 checkPermission 再次确认
+    await FlutterForegroundTask.requestNotificationPermission();
+    return await checkPermission();
+  }
 
   static Future<void> showCompletionNotification() async {
-    // 去掉 const，因为 vibrationPattern 使用了非 const 的 Int64List.fromList
     final android = AndroidNotificationDetails(
       'fall_heart_completion',
       '专注完成',
