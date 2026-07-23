@@ -5,9 +5,17 @@ workflows:
     environment:
       flutter: stable
     scripts:
-      - name: 清理并生成安卓配置
+      - name: 清理并生成安卓配置（然后立即覆盖被重置的文件）
         script: |
+          # 1. 生成标准安卓壳
           flutter create --platforms=android .
+
+          # 2. 用你上传的定制文件覆盖掉自动生成的版本
+          cp -f android/gradle/wrapper/gradle-wrapper.properties android/gradle/wrapper/
+          cp -f android/settings.gradle android/
+          cp -f android/app/build.gradle android/app/
+          cp -f android/app/src/main/AndroidManifest.xml android/app/src/main/
+
       - name: 构建调试APK
         script: |
           flutter build apk --debug
