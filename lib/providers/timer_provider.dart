@@ -1,3 +1,4 @@
+import '../services/notification_helper.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -37,11 +38,10 @@ class TimerProvider extends ChangeNotifier {
     final total = hours * 3600 + minutes * 60 + seconds;
     if (total <= 0) return;
 
-    final perm = await NotificationHelper.requestPermission();
-    if (perm != NotificationPermission.granted) {
-      throw Exception('需要通知权限才能开始专注');
-    }
-
+final granted = await NotificationHelper.requestPermission();
+if (!granted) {
+  throw Exception('需要通知权限才能开始专注');
+}
     _totalSeconds = total;
     _remainingSeconds = total;
     _plannedMinutes = total ~/ 60;
