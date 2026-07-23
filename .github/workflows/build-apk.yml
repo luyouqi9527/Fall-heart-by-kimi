@@ -27,67 +27,26 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Fix Android v1 embedding (force V2)
+      - name: Clean and regenerate Android project (V2)
         run: |
-          # 1. 如果 android 文件夹不存在，生成标准结构
-          if [ ! -d "android" ]; then
-            flutter create --platforms=android .
-          fi
+          # 1. 彻底删除旧的 android 文件夹（消除所有 v1 残留）
+          rm -rf android/
 
-          # 2. 强制写入 V2 的 AndroidManifest.xml（包含所有权限）
-          mkdir -p android/app/src/main
-          cat > android/app/src/main/AndroidManifest.xml << 'EOF'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.example.fall_heart">
-              <uses-permission android:name="android.permission.INTERNET" />
-              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-              <uses-permission android:name="android.permission.VIBRATE" />
-              <uses-permission android:name="android.permission.WAKE_LOCK" />
-              <application
-                  android:label="Fall Heart"
-                  android:name="${applicationName}"
-                  android:icon="@mipmap/ic_launcher">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:launchMode="singleTop"
-                      android:theme="@style/LaunchTheme"
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-                      android:hardwareAccelerated="true"
-                      android:windowSoftInputMode="adjustResize">
-                      <meta-data
-                          android:name="io.flutter.embedding.android.NormalTheme"
-                          android:resource="@style/NormalTheme" />
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-                  <service
-                      android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
-                      android:foregroundServiceType="dataSync"
-                      android:stopWithTask="false"
-                      android:exported="false" />
-                  <meta-data
-                      android:name="flutterEmbedding"
-                      android:value="2" />
-              </application>
-          </manifest>
-          EOF
+          # 2. 用 Flutter 重新生成标准的 V2 安卓项目
+          flutter create --platforms=android .
 
-          # 3. 强制写入 V2 的 app/build.gradle
-          mkdir -p android/app
+          # 3. 覆盖 app/build.gradle（强制 namespace 和 minSdk）
           cat > android/app/build.gradle << 'EOF'
           plugins {
               id "com.android.application"
               id "kotlin-android"
               id "dev.flutter.flutter-gradle-plugin"
           }
+
           android {
               namespace "com.example.fall_heart"
               compileSdk 34
+
               defaultConfig {
                   applicationId "com.example.fall_heart"
                   minSdk 21
@@ -95,24 +54,21 @@ jobs:
                   versionCode 1
                   versionName "1.0"
               }
+
               buildTypes {
                   release {
                       signingConfig signingConfigs.debug
                   }
               }
           }
+
           flutter {
               source "../.."
           }
           EOF
 
-          # 4. 强制创建 MainActivity.java (V2)
-          mkdir -p android/app/src/main/java/com/example/fall_heart
-          cat > android/app/src/main/java/com/example/fall_heart/MainActivity.java << 'EOF'
-          package com.example.fall_heart;
-          import io.flutter.embedding.android.FlutterActivity;
-          public class MainActivity extends FlutterActivity {}
-          EOF
+          # 4. 可选：如果 gradle 版本不兼容，可覆盖 settings.gradle 降级 AGP
+          # 但暂时不覆盖，先试试默认生成的。
 
       - name: Build APK
         run: |
