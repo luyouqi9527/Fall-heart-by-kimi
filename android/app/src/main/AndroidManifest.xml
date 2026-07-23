@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.fall_heart">
-    
+
     <!-- 通知权限（Android 13+ 动态申请） -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     
-    <!-- 震动权限 -->
+    <!-- 震动和唤醒权限 -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
@@ -34,13 +34,14 @@
             </intent-filter>
         </activity>
 
-        <!-- flutter_foreground_task 前台服务声明，包名/类名不可改 -->
+        <!-- flutter_foreground_task 前台服务声明 -->
         <service
             android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
             android:foregroundServiceType="dataSync"
             android:stopWithTask="false"
             android:exported="false" />
 
+        <!-- 强制使用 V2 嵌入 -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
