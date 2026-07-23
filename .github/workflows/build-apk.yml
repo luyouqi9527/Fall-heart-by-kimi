@@ -1,44 +1,114 @@
-# .github/workflows/build-apk.yml
 name: Build Flutter APK
 
-# 触发条件：当代码被推送到 main 分支时自动运行[reference:2]
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-android:
-    name: Build Android APK
-    # 使用最新的 Ubuntu 环境进行构建[reference:3][reference:4]
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 拉取你的代码[reference:5]
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. 设置 Java 环境 (Flutter 构建需要)[reference:6]
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3. 设置 Flutter 环境[reference:7][reference:8]
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      # 4. 安装项目依赖[reference:9][reference:10]
       - name: Install dependencies
         run: flutter pub get
 
-      # 5. 构建 Debug APK (无需签名，可直接安装测试)[reference:11][reference:12]
-      - name: Build APK
-        run: flutter build apk --debug
+      - name: Fix Android v1 embedding (force V2)
+        run: |
+          # 如果不存在 android 文件夹，先创建标准结构
+          if [ ! -d "android" ]; then
+            flutter create --platforms=android .
+          fi
 
-      # 6. 上传 APK 作为构建产物 (Artifact)[reference:13][reference:14]
+          # 强制覆盖 AndroidManifest.xml（V2嵌入）
+          mkdir -p android/app/src/main
+          cat > android/app/src/main/AndroidManifest.xml << 'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.fall_heart">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application
+                  android:label="Fall Heart"
+                  android:name="${applicationName}"
+                  android:icon="@mipmap/ic_launcher">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:launchMode="singleTop"
+                      android:theme="@style/LaunchTheme"
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+                      android:hardwareAccelerated="true"
+                      android:windowSoftInputMode="adjustResize">
+                      <meta-data
+                          android:name="io.flutter.embedding.android.NormalTheme"
+                          android:resource="@style/NormalTheme" />
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+                  <!-- 强制使用 V2 嵌入 -->
+                  <meta-data
+                      android:name="flutterEmbedding"
+                      android:value="2" />
+              </application>
+          </manifest>
+          EOF
+
+          # 强制覆盖 app/build.gradle（使用插件声明式）
+          mkdir -p android/app
+          cat > android/app/build.gradle << 'EOF'
+          plugins {
+              id "com.android.application"
+              id "kotlin-android"
+              id "dev.flutter.flutter-gradle-plugin"
+          }
+          android {
+              namespace "com.example.fall_heart"
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.example.fall_heart"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.debug
+                  }
+              }
+          }
+          flutter {
+              source "../.."
+          }
+          EOF
+
+          # 确保 MainActivity 正确继承 FlutterActivity
+          mkdir -p android/app/src/main/java/com/example/fall_heart
+          cat > android/app/src/main/java/com/example/fall_heart/MainActivity.java << 'EOF'
+          package com.example.fall_heart;
+          import io.flutter.embedding.android.FlutterActivity;
+          public class MainActivity extends FlutterActivity {}
+          EOF
+
+      - name: Build APK
+        run: |
+          flutter build apk --debug --no-version-check
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
