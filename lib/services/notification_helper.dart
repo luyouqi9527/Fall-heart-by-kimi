@@ -20,7 +20,8 @@ class NotificationHelper {
       FlutterForegroundTask.requestNotificationPermission();
 
   static Future<void> showCompletionNotification() async {
-    const android = AndroidNotificationDetails(
+    // 去掉 const，因为 vibrationPattern 使用了非 const 的 Int64List.fromList
+    final android = AndroidNotificationDetails(
       'fall_heart_completion',
       '专注完成',
       channelDescription: 'Fall Heart 专注结束提醒',
@@ -32,7 +33,7 @@ class NotificationHelper {
       icon: '@mipmap/ic_launcher',
     );
 
-    const details = NotificationDetails(android: android);
+    final details = NotificationDetails(android: android);
 
     await _plugin.show(
       1001,
