@@ -29,17 +29,22 @@ jobs:
 
       - name: Fix Android v1 embedding (force V2)
         run: |
-          # 如果不存在 android 文件夹，先创建标准结构
+          # 1. 如果 android 文件夹不存在，生成标准结构
           if [ ! -d "android" ]; then
             flutter create --platforms=android .
           fi
 
-          # 强制覆盖 AndroidManifest.xml（V2嵌入）
+          # 2. 强制写入 V2 的 AndroidManifest.xml（包含所有权限）
           mkdir -p android/app/src/main
           cat > android/app/src/main/AndroidManifest.xml << 'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.example.fall_heart">
               <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+              <uses-permission android:name="android.permission.VIBRATE" />
+              <uses-permission android:name="android.permission.WAKE_LOCK" />
               <application
                   android:label="Fall Heart"
                   android:name="${applicationName}"
@@ -60,7 +65,11 @@ jobs:
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
                   </activity>
-                  <!-- 强制使用 V2 嵌入 -->
+                  <service
+                      android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
+                      android:foregroundServiceType="dataSync"
+                      android:stopWithTask="false"
+                      android:exported="false" />
                   <meta-data
                       android:name="flutterEmbedding"
                       android:value="2" />
@@ -68,7 +77,7 @@ jobs:
           </manifest>
           EOF
 
-          # 强制覆盖 app/build.gradle（使用插件声明式）
+          # 3. 强制写入 V2 的 app/build.gradle
           mkdir -p android/app
           cat > android/app/build.gradle << 'EOF'
           plugins {
@@ -97,7 +106,7 @@ jobs:
           }
           EOF
 
-          # 确保 MainActivity 正确继承 FlutterActivity
+          # 4. 强制创建 MainActivity.java (V2)
           mkdir -p android/app/src/main/java/com/example/fall_heart
           cat > android/app/src/main/java/com/example/fall_heart/MainActivity.java << 'EOF'
           package com.example.fall_heart;
