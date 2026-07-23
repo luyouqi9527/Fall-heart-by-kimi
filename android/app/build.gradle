@@ -4,6 +4,12 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 android {
     namespace "com.example.fall_heart"
     compileSdk 36
@@ -11,7 +17,7 @@ android {
     defaultConfig {
         applicationId "com.example.fall_heart"
         minSdk 21
-        targetSdk 36 
+        targetSdk 36
         versionCode 1
         versionName "1.0"
     }
