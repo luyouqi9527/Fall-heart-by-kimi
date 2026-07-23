@@ -63,7 +63,7 @@ class FallHeartApp extends StatelessWidget {
           surface: const Color(0xFF1A1A1A),
         ),
         scaffoldBackgroundColor: const Color(0xFF1A1A1A),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: const Color(0xFF2A2A2A),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
