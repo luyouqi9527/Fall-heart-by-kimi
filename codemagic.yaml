@@ -5,9 +5,6 @@ workflows:
     environment:
       flutter: stable
     scripts:
-      - name: 生成安卓配置
-        script: |
-          flutter create --platforms=android .
       - name: 构建调试APK
         script: |
           flutter build apk --debug
