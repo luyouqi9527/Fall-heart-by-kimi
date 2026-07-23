@@ -1,0 +1,46 @@
+# .github/workflows/build-apk.yml
+name: Build Flutter APK
+
+# 触发条件：当代码被推送到 main 分支时自动运行[reference:2]
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-android:
+    name: Build Android APK
+    # 使用最新的 Ubuntu 环境进行构建[reference:3][reference:4]
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 拉取你的代码[reference:5]
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. 设置 Java 环境 (Flutter 构建需要)[reference:6]
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3. 设置 Flutter 环境[reference:7][reference:8]
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # 4. 安装项目依赖[reference:9][reference:10]
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 5. 构建 Debug APK (无需签名，可直接安装测试)[reference:11][reference:12]
+      - name: Build APK
+        run: flutter build apk --debug
+
+      # 6. 上传 APK 作为构建产物 (Artifact)[reference:13][reference:14]
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fall-heart-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
