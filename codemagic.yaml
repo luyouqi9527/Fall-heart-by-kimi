@@ -5,26 +5,31 @@ workflows:
     environment:
       flutter: stable
     scripts:
-      - name: 强制使用 Gradle 9.1.0
+      - name: 清理缓存并强制降级 AGP 版本
         script: |
-          export GRADLE_VERSION=9.1.0
-          # 删除旧 android 文件夹
+          # 1. 彻底删除旧的 android 文件夹和缓存（防止守护进程干扰）
           rm -rf android
-          # 重新生成标准配置
+          rm -rf .gradle
+
+          # 2. 生成标准安卓壳
           flutter create --platforms=android .
-          # 强制覆盖 gradle-wrapper.properties
-          mkdir -p android/gradle/wrapper
-          cat > android/gradle/wrapper/gradle-wrapper.properties << 'EOF'
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-9.1.0-bin.zip
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
-          EOF
-          # 降低插件版本到兼容 8.7（备用方案）
-          sed -i '' 's/8.6.0/8.1.0/g' android/settings.gradle 2>/dev/null || true
-      - name: 构建调试APK
+
+          # 3. 修改 settings.gradle：将 8.6.0 降级为 8.4.0（兼容 Gradle 8.7）
+          sed -i '' 's/8.6.0/8.4.0/g' android/settings.gradle
+
+          # 4. 修改 app/build.gradle：确保 namespace 和 minSdk 正确
+          # （如果你之前上传过完整的 build.gradle，这里确保不覆盖它；但为了保险，我们用 sed 微调）
+          # 注意：如果 flutter create 生成的是 kotlin 文件，这没问题。
+          # 我们额外加一步：确保 minSdk 是 21
+          sed -i '' 's/minSdkVersion [0-9]*/minSdkVersion 21/g' android/app/build.gradle 2>/dev/null || true
+
+      - name: 执行 Gradle 包装器刷新并构建
         script: |
+          # 手动执行 gradle wrapper 刷新，确保读取新的 distributionUrl
+          cd android
+          chmod +x gradlew
+          ./gradlew --version
+          cd ..
           flutter build apk --debug
     artifacts:
       - build/app/outputs/flutter-apk/app-debug.apk
